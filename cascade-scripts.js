@@ -417,23 +417,28 @@
     setTimeout(update, 300);
 
     let interval_id
-    let currentWindowURL
+    let current_window_URL
+    let current_action
     
     // Checks for URI changes and reloads the update pane 
     function checkURLChange() {
-        if (currentWindowURL == null || currentWindowURL == "") {
-            currentWindowURL = window.location.href;
+        let current_action_name = $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl').text().trim();
+
+        if (current_window_URL == null || current_window_URL == "") {
+            current_window_URL = window.location.href;
+        } else if (current_action == null || current_action == "") {
+            current_action = current_action_name;
         } else {
             // User change the page, refresh the update pane
-            if (currentWindowURL != window.location.href) {
-                update()
+            if (current_window_URL != window.location.href || current_action != current_action_name) {
+                setTimeout(update, 150);
                 
                 if (interval_id != null) {
                     clearInterval(interval_id)
                 } 
                 interval_id = setInterval(update, 2000)
 
-                currentWindowURL = window.location.href
+                current_window_URL = window.location.href
             }
         }
     }
