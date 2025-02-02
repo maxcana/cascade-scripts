@@ -426,7 +426,7 @@
         } else {
             // User change the page, refresh the update pane
             if (currentWindowURL != window.location.href) {
-                update()
+                setTimeout(update, 150);
                 
                 if (interval_id != null) {
                     clearInterval(interval_id)
