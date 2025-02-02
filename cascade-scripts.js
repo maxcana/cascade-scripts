@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.0
+// @version      0.0.2
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -16,8 +16,6 @@
     let db = {
 
     }
-
-    let currentWindowURL;
 
     function extractGameData(jsFile) {
         function genericSlice(search, add = 1){
@@ -302,17 +300,6 @@
         return { container: container, tab_contents: tabContents, tab_buttons: tabButtons};
     }
 
-    //    let current_skill_name = $('a.peer\\/menu-button').find('span.font-light.text-muted-foreground').text().trim()
-    //    let current_action_name = $('a.peer\\/menu-button').find('h3.font-semibold').text().trim()
-
-    // debug
-    // window.get_action = update;
-    // window.stop_updating = () => {clearInterval(interval_id)}
-
-    let window_iterval_id = setInterval(checkURLChange, 100);
-    let interval_id;
-    setTimeout(update, 300);
-
     function get_calcs(data){
         let current_skill = data.current_skill
         let current_level = data.current_level
@@ -332,8 +319,6 @@
 
         let next_level_time = (next_level_xp - current_xp) / xph * 3600
         let next_tier_time = (next_tier_xp - current_xp) / xph * 3600
-
-        //console.log(`current_level: ${current_level},\n current_xp_progress_to_next: ${current_xp_progress_to_next},\n current_xp: ${current_xp},\n next_level_level: ${next_level_level},\n next_level_xp: ${next_level_xp},\n next_tier_level: ${next_tier_level},\n next_tier_xp: ${next_tier_xp},\n next_level_time: ${next_level_time},\n next_tier_time: ${next_tier_time}`)
 
         calculations.push([["/images/items/" + current_action.image, "actions/hr"], help.round(aph, 0.1)])
 
@@ -426,23 +411,26 @@
         return current_action
     }
 
-    // checkURLChange
-    // Checks for URI changes and reloads the update pane 
-    //
-    function checkURLChange() {
+    // calling update
+    
+    setInterval(checkURLChange, 100);
+    setTimeout(update, 300);
 
+    let interval_id
+    let currentWindowURL
+    
+    // Checks for URI changes and reloads the update pane 
+    function checkURLChange() {
         if (currentWindowURL == null || currentWindowURL == "") {
             currentWindowURL = window.location.href;
         } else {
             // User change the page, refresh the update pane
             if (currentWindowURL != window.location.href) {
-                
                 update()
-
+                
                 if (interval_id != null) {
                     clearInterval(interval_id)
                 } 
-                                
                 interval_id = setInterval(update, 2000)
 
                 currentWindowURL = window.location.href
