@@ -216,10 +216,10 @@
 
 
     window.cascade = {
-        help: () => this.help,
-        db: () => this.db,
-        me: () => this.me,
-        me_ready: () => this.me_ready
+        get help() { return help; },
+        get db() { return db; },
+        get me() { return me; },
+        get me_ready() { return me_ready; },
     }
 
     // actual script below
@@ -311,10 +311,10 @@
         let next_level_xp = data.next_level_xp
         let next_tier_xp = data.next_tier_xp
         let current_action = data.current_action
-        let actual_action_duration = data.actual_action_duration
+        let actual_action_duration_seconds = data.actual_action_duration_seconds
 
         let calculations = []
-        let aph = 3600 / actual_action_duration
+        let aph = 3600 / actual_action_duration_seconds
         let xph = aph * current_action.experience
 
         let next_level_time = (next_level_xp - current_xp) / xph * 3600
@@ -372,8 +372,9 @@
     }
 
     let current_tab = "Calculations"
+    const clear_panel = () => $('#cascade_container').remove();
     function update(){
-        $('#cascade_container').remove();
+        clear_panel()
 
         let current_skill_name = $('header.sticky').find('span.text-foreground').find('span.inline-flex.items-center').text().trim()
         let current_action_name = $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl').text().trim()
@@ -388,9 +389,11 @@
         let next_tier_xp = help.level_to_xp(next_tier_level)
 
         let current_action = dbf.action_skill('name.en', current_action_name, current_skill.id)
-        let actual_action_duration = $('div.text-2xl.font-semibold').filter(function() {return $(this).text().trim() === "Actions";}).parent().parent().find('table').find('td:contains("' + current_action_name + '")').closest('tr').find('td:eq(2)').text().replace('s', '').trim();
+        let action_duration_original_ms = current_action.duration
+        let speed_multiplier = (1 + ((me.stats[current_skill.name.toLowerCase() + '_speed']??0)) / 100)
+        let actual_action_duration_seconds = action_duration_original_ms / speed_multiplier / 1000
 
-        let calcs = get_calcs({current_skill, current_level, current_xp, next_level_level: current_level + 1, next_tier_level, next_level_xp, next_tier_xp, current_action, actual_action_duration})
+        let calcs = get_calcs({current_skill, current_level, current_xp, next_level_level: current_level + 1, next_tier_level, next_level_xp, next_tier_xp, current_action, actual_action_duration_seconds})
 
         let calcs_table = create_table({
             items: calcs,
@@ -411,30 +414,26 @@
         return current_action
     }
 
-    // calling update
-    
-    setInterval(checkURLChange, 100);
-    setTimeout(update, 300);
+    // check for when action title changes
+    let last_action_title
+    setInterval(check_action, 100)
 
-    let interval_id
-    let current_window_URL
-    
-    // Checks for URI changes and reloads the update pane 
-    function checkURLChange() {
-        if (current_window_URL == null || current_window_URL == "") {
-            current_window_URL = window.location.href;
-        } else {
-            // User change the page, refresh the update pane
-            if (current_window_URL != window.location.href) {
-                setTimeout(update, 150);
-                
-                if (interval_id != null) {
-                    clearInterval(interval_id)
-                } 
-                interval_id = setInterval(update, 2000)
+    function check_action(){
+        $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl')
+        .each((_, element) => {
+            const value = $(element).text()
 
-                current_window_URL = window.location.href
+            if(value != last_action_title){
+                // update when action is changed
+                clear_panel()
+                setTimeout(update, 55)
             }
-        }
+
+            last_action_title = value
+        });
     }
+
+    // also update when 5s passes
+    setInterval(update, 5000)
+
 })();
