@@ -17,6 +17,8 @@
 
     }
 
+    let currentWindowURL;
+
     function extractGameData(jsFile) {
         function genericSlice(search, add = 1){
             const startIndex = jsFile.indexOf(search);
@@ -300,16 +302,16 @@
         return { container: container, tab_contents: tabContents, tab_buttons: tabButtons};
     }
 
-
-
-
     //    let current_skill_name = $('a.peer\\/menu-button').find('span.font-light.text-muted-foreground').text().trim()
     //    let current_action_name = $('a.peer\\/menu-button').find('h3.font-semibold').text().trim()
 
-    window.get_action = update;
-    window.stop_updating = () => {clearInterval(interval_id)}
+    // debug
+    // window.get_action = update;
+    // window.stop_updating = () => {clearInterval(interval_id)}
 
-    let interval_id = setInterval(update, 2000)
+    let window_iterval_id = setInterval(checkURLChange, 100);
+    let interval_id;
+    setTimeout(update, 300);
 
     function get_calcs(data){
         let current_skill = data.current_skill
@@ -422,5 +424,29 @@
         tab_menu.tab_buttons[current_tab].click()
 
         return current_action
+    }
+
+    // checkURLChange
+    // Checks for URI changes and reloads the update pane 
+    //
+    function checkURLChange() {
+
+        if (currentWindowURL == null || currentWindowURL == "") {
+            currentWindowURL = window.location.href;
+        } else {
+            // User change the page, refresh the update pane
+            if (currentWindowURL != window.location.href) {
+                
+                update()
+
+                if (interval_id != null) {
+                    clearInterval(interval_id)
+                } 
+                                
+                interval_id = setInterval(update, 2000)
+
+                currentWindowURL = window.location.href
+            }
+        }
     }
 })();
