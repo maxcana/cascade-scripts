@@ -417,15 +417,15 @@
     setTimeout(update, 300);
 
     let interval_id
-    let currentWindowURL
+    let current_window_URL
     
     // Checks for URI changes and reloads the update pane 
     function checkURLChange() {
-        if (currentWindowURL == null || currentWindowURL == "") {
-            currentWindowURL = window.location.href;
+        if (current_window_URL == null || current_window_URL == "") {
+            current_window_URL = window.location.href;
         } else {
             // User change the page, refresh the update pane
-            if (currentWindowURL != window.location.href) {
+            if (current_window_URL != window.location.href) {
                 setTimeout(update, 150);
                 
                 if (interval_id != null) {
@@ -433,7 +433,7 @@
                 } 
                 interval_id = setInterval(update, 2000)
 
-                currentWindowURL = window.location.href
+                current_window_URL = window.location.href
             }
         }
     }
