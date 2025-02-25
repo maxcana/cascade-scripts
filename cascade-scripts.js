@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.1
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -49,7 +49,7 @@
 
         // Extract YD (actions) - it starts with "const YD={" and goes until we hit the next const/let/var declaration
         function extractYD() {
-            return genericSlice('={1:{id:1,actions:{1:{id:1,skill_id:1,skill_level:1,name:{de:"Kupferader",en:"Copper Vein"}', 1);
+            return genericSlice('={1:{id:1,actions:{1:{id:1,skill_id:1,skill_level:1,action_type:"GATHERING",category:null,combat:null,name:{de:"Kupferader",en:"Copper Vein"}', 1);
         }
 
         // Extract Ti (skills)
@@ -300,6 +300,58 @@
         return { container: container, tab_contents: tabContents, tab_buttons: tabButtons};
     }
 
+    function recalculate_stats(){
+        const i = me.equipment
+        let bx = {
+            health: 50,
+            armor: 0,
+            block_chance: 0,
+            damage: 0,
+            attack_speed: 0,
+            mining_speed: 0,
+            mining_quality: 0,
+            fishing_speed: 0,
+            fishing_quality: 0,
+            smithing_speed: 0,
+            smithing_quality: 0,
+            smelting_speed: 0,
+            smelting_quality: 0,
+            woodcutting_speed: 0,
+            woodcutting_quality: 0,
+            cooking_speed: 0
+        }
+        , n = {
+            ...bx
+        };
+        if (i) {
+            for (const [,r] of Object.entries(i)) {
+                if (!r)
+                    continue;
+                const l = db.actions[r];
+                if (!(!l || !l.stats))
+                    for (const u in n)
+                        Object.prototype.hasOwnProperty.call(l.stats, u) && (n[u] += l.stats[u])
+            }
+            n.damage === 0 && (n.damage = 2);
+            n.attack_speed === 0 && (n.attack_speed = 2e3);
+            return n
+        }
+    }
+
+    function get_current_action_name(){
+        let action_titles = $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl')
+
+        let current_action_name = "unknown";
+        if(action_titles.length == 2){
+        //combat, first one is your name.
+            current_action_name = action_titles.eq(1).text().trim()
+
+        } else {
+            //normal skill
+            current_action_name = action_titles.text().trim()
+        }
+        return current_action_name
+    }
     function get_calcs(data){
         let current_skill = data.current_skill
         let current_level = data.current_level
@@ -320,7 +372,13 @@
         let next_level_time = (next_level_xp - current_xp) / xph * 3600
         let next_tier_time = (next_tier_xp - current_xp) / xph * 3600
 
-        calculations.push([["/images/items/" + current_action.image, "actions/hr"], help.round(aph, 0.1)])
+        let action_img = "images/items/" + current_action.image
+
+        if(current_action.action_type == "COMBAT"){
+            action_img = "/images/ui/combat/" + current_action.image
+        }
+
+        calculations.push([[action_img, "actions/hr"], help.round(aph, 0.1)])
 
         calculations.push([["/images/ui/skills/" + current_skill.image, "xp/hr"], help.round(xph)])
 
@@ -330,7 +388,7 @@
 
         calculations.push(["item", "per hr", "quantity", "rate"])
 
-        let quality_bonus = 1 + (me.stats[current_skill.name.toLowerCase() + '_quality'] ?? 0) / 100
+        let quality_bonus = 1 + (recalculate_stats()[current_skill.name.toLowerCase() + '_quality'] ?? 0) / 100
         for (let i = 0; i < current_action.rewards.length; i++){
             current_action.rewards[i].drop_rate_with_bonus = current_action.rewards[i].drop_rate * quality_bonus
         }
@@ -374,10 +432,12 @@
     let current_tab = "Calculations"
     const clear_panel = () => $('#cascade_container').remove();
     function update(){
+
         clear_panel()
 
         let current_skill_name = $('header.sticky').find('span.text-foreground').find('span.inline-flex.items-center').text().trim()
-        let current_action_name = $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl').text().trim()
+
+        let current_action_name = get_current_action_name()
         let current_skill = dbf.skill('name', current_skill_name)
         if(!current_skill || !current_action_name || !current_skill_name) return;
 
@@ -389,9 +449,19 @@
         let next_tier_xp = help.level_to_xp(next_tier_level)
 
         let current_action = dbf.action_skill('name.en', current_action_name, current_skill.id)
-        let action_duration_original_ms = current_action.duration
-        let speed_multiplier = (1 + ((me.stats[current_skill.name.toLowerCase() + '_speed']??0)) / 100)
-        let actual_action_duration_seconds = action_duration_original_ms / speed_multiplier / 1000
+        console.log("Update", current_action)
+
+        let action_duration_original_ms
+        let actual_action_duration_seconds
+        if(current_action.action_type == "COMBAT"){
+            console.log("Combat not supported")
+            action_duration_original_ms = 3600000
+            actual_action_duration_seconds = 3600
+        } else {
+            action_duration_original_ms = current_action.duration
+            let speed_multiplier = (1 + ((recalculate_stats()[current_skill.name.toLowerCase() + '_speed']??0)) / 100)
+            actual_action_duration_seconds  = action_duration_original_ms / speed_multiplier / 1000
+        }
 
         let calcs = get_calcs({current_skill, current_level, current_xp, next_level_level: current_level + 1, next_tier_level, next_level_xp, next_tier_xp, current_action, actual_action_duration_seconds})
 
@@ -411,6 +481,7 @@
 
         tab_menu.tab_buttons[current_tab].click()
 
+
         return current_action
     }
 
@@ -419,18 +490,15 @@
     setInterval(check_action, 100)
 
     function check_action(){
-        $('div.text-card-foreground').find('div.text-sm:contains("Lv.")').parent().find('div.text-2xl')
-        .each((_, element) => {
-            const value = $(element).text()
+        const value = get_current_action_name()
 
-            if(value != last_action_title){
-                // update when action is changed
-                clear_panel()
-                setTimeout(update, 55)
-            }
+        if(value != last_action_title){
+            // update when action is changed
+            clear_panel()
+            setTimeout(update, 55)
+        }
+        last_action_title = value
 
-            last_action_title = value
-        });
     }
 
     // also update when 5s passes
