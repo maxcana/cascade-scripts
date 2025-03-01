@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.0.2
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -327,13 +327,17 @@
             for (const [,r] of Object.entries(i)) {
                 if (!r)
                     continue;
-                const l = db.actions[r];
+                const l = db.items[r];
                 if (!(!l || !l.stats))
-                    for (const u in n)
+                    for (const u in n){
+                        //Object.prototype.hasOwnProperty.call(l.stats, u) && console.log("stat", u, l.stats[u])
                         Object.prototype.hasOwnProperty.call(l.stats, u) && (n[u] += l.stats[u])
+                    }
             }
             n.damage === 0 && (n.damage = 2);
             n.attack_speed === 0 && (n.attack_speed = 2e3);
+
+            //console.log("calculated stats: ", n)
             return n
         }
     }
@@ -364,9 +368,11 @@
         let next_tier_xp = data.next_tier_xp
         let current_action = data.current_action
         let actual_action_duration_seconds = data.actual_action_duration_seconds
+        let calculated_stats = data.calculated_stats
 
         let calculations = []
-        let aph = 3600 / actual_action_duration_seconds
+        let aph = 3600.0 / actual_action_duration_seconds
+        //console.log("aph ", aph)
         let xph = aph * current_action.experience
 
         let next_level_time = (next_level_xp - current_xp) / xph * 3600
@@ -388,7 +394,7 @@
 
         calculations.push(["item", "per hr", "quantity", "rate"])
 
-        let quality_bonus = 1 + (recalculate_stats()[current_skill.name.toLowerCase() + '_quality'] ?? 0) / 100
+        let quality_bonus = 1 + (calculated_stats[current_skill.name.toLowerCase() + '_quality'] ?? 0) / 100
         for (let i = 0; i < current_action.rewards.length; i++){
             current_action.rewards[i].drop_rate_with_bonus = current_action.rewards[i].drop_rate * quality_bonus
         }
@@ -453,17 +459,22 @@
 
         let action_duration_original_ms
         let actual_action_duration_seconds
+
+        let calculated_stats = recalculate_stats()
+
         if(current_action.action_type == "COMBAT"){
             console.log("Combat not supported")
             action_duration_original_ms = 3600000
             actual_action_duration_seconds = 3600
         } else {
             action_duration_original_ms = current_action.duration
-            let speed_multiplier = (1 + ((recalculate_stats()[current_skill.name.toLowerCase() + '_speed']??0)) / 100)
-            actual_action_duration_seconds  = action_duration_original_ms / speed_multiplier / 1000
+
+            // due to how speed works, 50% "speed" results in 2x more actions, and 99% "speed" results in 100x more actions.
+            let speed_or_more_accurately_duration_reduction_factor = (1 - ((calculated_stats[current_skill.name.toLowerCase() + '_speed']??0)) / 100.0)
+            actual_action_duration_seconds = action_duration_original_ms / 1000 * (speed_or_more_accurately_duration_reduction_factor)
         }
 
-        let calcs = get_calcs({current_skill, current_level, current_xp, next_level_level: current_level + 1, next_tier_level, next_level_xp, next_tier_xp, current_action, actual_action_duration_seconds})
+        let calcs = get_calcs({current_skill, current_level, current_xp, next_level_level: current_level + 1, next_tier_level, next_level_xp, next_tier_xp, current_action, actual_action_duration_seconds, calculated_stats})
 
         let calcs_table = create_table({
             items: calcs,
