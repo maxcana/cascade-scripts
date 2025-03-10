@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.0.3
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -155,7 +155,7 @@
     const euler_mascheroni = 0.57721566490153286060651209008240243104215933593992;
 
     let help = {
-        tiers: [1, 15, 30, 55, 65, 75, 85, 100],
+        tiers: [1, 10, 25, 40, 55, 70, 85, 100, 115],
         first_greater_than: (arr, num) => arr.find(x => x > num),
         format_time: (seconds) => {
             let h = Math.floor(seconds / 3600);
