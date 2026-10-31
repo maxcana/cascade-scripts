@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.0.3
+// @version      0.0.4
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -10,6 +10,8 @@
 // @require      https://code.jquery.com/jquery-3.6.4.min.js
 // @run-at       document-start
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/525487/Cascade-Scripts.user.js
+// @updateURL https://update.greasyfork.org/scripts/525487/Cascade-Scripts.meta.js
 // ==/UserScript==
 
 (async function() {
@@ -44,17 +46,17 @@
         }
         // Extract HD (items) - it starts with "HD={" and goes until we hit the next const/let/var declaration
         function extractHD() {
-            return genericSlice('={1:{id:1,name:{de:"Kupfererz",en:"Copper Ore"}', 1);
+            return genericSlice('={1:{id:1,name:{de:`Kupfererz`,en:`Copper Ore`}', 1);
         }
 
         // Extract YD (actions) - it starts with "const YD={" and goes until we hit the next const/let/var declaration
         function extractYD() {
-            return genericSlice('={1:{id:1,actions:{1:{id:1,skill_id:1,skill_level:1,action_type:"GATHERING",category:null,combat:null,name:{de:"Kupferader",en:"Copper Vein"}', 1);
+            return genericSlice('={1:{id:1,actions:{1:{id:1,skill_id:1,skill_level:1,action_type:`GATHERING`,category:null,combat:null,name:{de:`Kupferader`,en:`Copper Vein`}', 1);
         }
 
         // Extract Ti (skills)
         function extractTi() {
-            return genericSlice('={1:{id:1,name:"Mining"', 1);
+            return genericSlice('={1:{id:1,name:`Mining`', 1);
         }
 
         try {
