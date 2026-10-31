@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cascade-Scripts
 // @namespace    http://tampermonkey.net/
-// @version      0.0.4
+// @version      0.0.5
 // @description  a mod for idle.vidski.dev
 // @author       Cascade
 // @match        https://idle.vidski.dev/*
@@ -450,7 +450,8 @@
         if(!current_skill || !current_action_name || !current_skill_name) return;
 
         let current_level = Number($('div.flex.justify-between.p-2.pl-6.pr-6.text-sm').find('span:contains("Lv.")').text().replace("Lv.", "").trim())
-        let current_xp_progress_to_next = Number($('div.flex.justify-between.p-2.pl-6.pr-6.text-sm').find('span:contains("XP")').text().replace(",", "").replace("XP", "").trim().split('/')[0])
+        let current_xp_progress_to_next = Number($('div.flex.justify-between.p-2.pl-6.pr-6.text-sm').find('span:contains("XP")').text().replaceAll(",", "").replace("XP", "").trim().split('/')[0])
+
         let current_xp = help.level_to_xp(current_level) + current_xp_progress_to_next
         let next_level_xp = help.level_to_xp(current_level + 1)
         let next_tier_level = help.first_greater_than(help.tiers, current_level)
